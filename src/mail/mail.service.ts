@@ -78,15 +78,15 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('SMTP_FROM'),
       to: email,
-      subject: 'Witamy w FitFleet AIOM - Załóż Firmę',
+      subject: 'Witamy w Fitlit - Załóż Firmę',
       html: `
         <style>${this.emailStyles}</style>
         <div class="container">
           <div class="header">
-            <h1 class="title">Witamy w FitFleet AIOM!</h1>
+            <h1 class="title">Witamy w Fitlit!</h1>
           </div>
           <div class="content">
-            <p>Zostałeś zaproszony do założenia firmy w systemie FitFleet AIOM.</p>
+            <p>Zostałeś zaproszony do założenia firmy w systemie Fitlit.</p>
             <p>Aby rozpocząć, kliknij w poniższy przycisk:</p>
             <center>
               <a href="${invitationLink}" class="button">Załóż Firmę</a>
@@ -101,7 +101,7 @@ export class MailService {
             <p>Jeśli nie spodziewałeś się tego zaproszenia, zignoruj tę wiadomość.</p>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} FitFleet AIOM. Wszystkie prawa zastrzeżone.</p>
+            <p>© ${new Date().getFullYear()} Fitlit. Wszystkie prawa zastrzeżone.</p>
           </div>
         </div>
       `,
@@ -121,7 +121,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('SMTP_FROM'),
       to: email,
-      subject: `Zaproszenie do ${companyName} w FitFleet AIOM`,
+      subject: `Zaproszenie do ${companyName} w Fitlit`,
       html: `
         <style>${this.emailStyles}</style>
         <div class="container">
@@ -129,7 +129,7 @@ export class MailService {
             <h1 class="title">Zaproszenie do Firmy</h1>
           </div>
           <div class="content">
-            <p>Otrzymałeś zaproszenie do dołączenia do firmy <strong>${companyName}</strong> w systemie FitFleet AIOM.</p>
+            <p>Otrzymałeś zaproszenie do dołączenia do firmy <strong>${companyName}</strong> w systemie Fitlit.</p>
             <p><strong>${inviterName}</strong> zaprasza Cię do współpracy.</p>
             <p>Aby utworzyć konto i dołączyć do firmy, kliknij poniższy przycisk:</p>
             <center>
@@ -139,7 +139,7 @@ export class MailService {
             <p>Jeśli nie spodziewałeś się tego zaproszenia, możesz je zignorować.</p>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} FitFleet AIOM. Wszystkie prawa zastrzeżone.</p>
+            <p>© ${new Date().getFullYear()} Fitlit. Wszystkie prawa zastrzeżone.</p>
           </div>
         </div>
       `,

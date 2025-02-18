@@ -56,27 +56,49 @@ export class AuthController {
     response.clearCookie('jwt');
     response.clearCookie('token');
 
-    // Set new token
-    response.cookie('fitlit_token', token, {
+    // Cookie options
+    const cookieOptions = {
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'PROD',
+      sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      domain: process.env.COOKIE_DOMAIN,
-    });
+      path: '/',
+    } as any; // Using any to allow conditional addition of domain
+
+    // Only add domain in production and if it's properly set
+    if (process.env.NODE_ENV === 'PROD' && process.env.COOKIE_DOMAIN) {
+      // Remove any whitespace and comments from the domain
+      const domain = process.env.COOKIE_DOMAIN.trim().split('#')[0];
+      if (domain) {
+        cookieOptions.domain = domain;
+      }
+    }
+
+    // Set new token with updated settings
+    response.cookie('fitlit_token', token, cookieOptions);
 
     return { user };
   }
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) response: Response) {
-    // Clear all possible tokens
-    response.clearCookie('fitlit_token', {
+    // Use the same cookie options for consistency
+    const cookieOptions = {
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      domain: process.env.COOKIE_DOMAIN,
-    });
+      secure: process.env.NODE_ENV === 'PROD',
+      sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
+      path: '/',
+    } as any;
+
+    if (process.env.NODE_ENV === 'PROD' && process.env.COOKIE_DOMAIN) {
+      const domain = process.env.COOKIE_DOMAIN.trim().split('#')[0];
+      if (domain) {
+        cookieOptions.domain = domain;
+      }
+    }
+
+    // Clear token with matching settings
+    response.clearCookie('fitlit_token', cookieOptions);
     response.clearCookie('jwt');
     response.clearCookie('token');
 
