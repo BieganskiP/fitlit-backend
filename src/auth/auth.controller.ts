@@ -63,12 +63,22 @@ export class AuthController {
       sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       path: '/',
-    } as any; // Using any to allow conditional addition of domain
+    } as any;
 
     // Only add domain in production and if it's properly set
     if (process.env.NODE_ENV === 'PROD' && process.env.COOKIE_DOMAIN) {
-      // Remove any whitespace and comments from the domain
-      const domain = process.env.COOKIE_DOMAIN.trim().split('#')[0];
+      // Extract just the hostname part
+      let domain = process.env.COOKIE_DOMAIN.trim();
+      
+      // Remove protocol if present
+      domain = domain.replace(/^https?:\/\//, '');
+      
+      // Remove port if present
+      domain = domain.split(':')[0];
+      
+      // Remove path if present
+      domain = domain.split('/')[0];
+
       if (domain) {
         cookieOptions.domain = domain;
       }
