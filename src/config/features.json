@@ -1,0 +1,23 @@
+{
+  "USER_MANAGEMENT": {
+    "minPlan": "BASIC",
+    "description": "Basic user management"
+  },
+  "ROLE_MANAGEMENT": {
+    "minPlan": "STANDARD",
+    "description": "Advanced role management"
+  },
+  "WAGE_MANAGEMENT": {
+    "minPlan": "PREMIUM",
+    "description": "Employee wage management"
+  },
+  "ADVANCED_ANALYTICS": {
+    "minPlan": "PREMIUM",
+    "description": "Advanced analytics and reporting"
+  },
+  "SHIFT_SCHEDULING": {
+    "minPlan": "STANDARD",
+    "description": "Work shift scheduling"
+  }
+} 
+
