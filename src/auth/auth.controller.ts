@@ -56,33 +56,14 @@ export class AuthController {
     response.clearCookie('jwt');
     response.clearCookie('token');
 
-    // Cookie options
+    // Cookie options for production environment
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'PROD',
-      sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      secure: false, // Set to false for testing with Postman
+      sameSite: 'lax', // Changed from 'none' for testing
+      maxAge: 24 * 60 * 60 * 1000,
       path: '/',
     } as any;
-
-    // Only add domain in production and if it's properly set
-    if (process.env.NODE_ENV === 'PROD' && process.env.COOKIE_DOMAIN) {
-      // Extract just the hostname part
-      let domain = process.env.COOKIE_DOMAIN.trim();
-      
-      // Remove protocol if present
-      domain = domain.replace(/^https?:\/\//, '');
-      
-      // Remove port if present
-      domain = domain.split(':')[0];
-      
-      // Remove path if present
-      domain = domain.split('/')[0];
-
-      if (domain) {
-        cookieOptions.domain = domain;
-      }
-    }
 
     // Set new token with updated settings
     response.cookie('fitlit_token', token, cookieOptions);
