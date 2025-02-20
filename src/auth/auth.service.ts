@@ -170,7 +170,6 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
 
     const cookieOptions = {
-      domain: process.env.COOKIE_DOMAIN,
       secure: process.env.NODE_ENV === 'PROD',
       sameSite:
         process.env.NODE_ENV === 'PROD'
@@ -357,7 +356,12 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async login(email: string, password: string, response: Response, cookieOptions: any) {
+  async login(
+    email: string,
+    password: string,
+    response: Response,
+    cookieOptions: any,
+  ) {
     console.log('Login attempt:', { email, hasPassword: !!password }); // Debug log
 
     if (!email || !password) {
