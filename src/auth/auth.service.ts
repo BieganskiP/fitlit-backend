@@ -357,7 +357,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async login(email: string, password: string, @Res() response: Response) {
+  async login(email: string, password: string, response: Response, cookieOptions: any) {
     console.log('Login attempt:', { email, hasPassword: !!password }); // Debug log
 
     if (!email || !password) {
@@ -389,6 +389,9 @@ export class AuthService {
           }
         : null,
     };
+
+    // When setting the cookie, use the provided options
+    response.cookie('fitlit_token', result.token, cookieOptions);
 
     return {
       user: userData,

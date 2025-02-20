@@ -26,7 +26,14 @@ import { RoutesModule } from './routes/routes.module';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get('DATABASE_URL'),
-        entities: [User, Company, AddressList, AddressListInfo, Complaint, Route],
+        entities: [
+          User,
+          Company,
+          AddressList,
+          AddressListInfo,
+          Complaint,
+          Route,
+        ],
         synchronize: configService.get('NODE_ENV') === 'DEV',
         ssl: process.env.NODE_ENV === 'production',
       }),

@@ -54,12 +54,33 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    console.log('Login request received:', { 
-      email: loginDto.email, 
-      hasPassword: !!loginDto.password 
-    }); // Debug log
-    
-    return this.authService.login(loginDto.email, loginDto.password, response);
+    console.log('Login request received:', {
+      email: loginDto.email,
+      hasPassword: !!loginDto.password,
+    });
+
+    // Add expires option to make the cookie persistent
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'PROD',
+      sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
+      path: '/',
+      expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 365 days expiration
+    } as any;
+
+    if (process.env.NODE_ENV === 'PROD' && process.env.COOKIE_DOMAIN) {
+      const domain = process.env.COOKIE_DOMAIN.trim().split('#')[0];
+      if (domain) {
+        cookieOptions.domain = domain;
+      }
+    }
+
+    return this.authService.login(
+      loginDto.email,
+      loginDto.password,
+      response,
+      cookieOptions,
+    );
   }
 
   @Post('logout')
