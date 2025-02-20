@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,6 +18,7 @@ import { UserStatus } from 'src/enums/user-status.enum';
 import { CreateSuperAdminDto } from '../dto/user/create-superadmin.dto';
 import { ConfigService } from '@nestjs/config';
 import { CompanyService } from '../company/company.service';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -157,7 +159,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async generateToken(user: User) {
+  async generateToken(user: User, @Res() response?: Response) {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -166,6 +168,23 @@ export class AuthService {
     };
 
     const token = this.jwtService.sign(payload);
+
+    const cookieOptions = {
+      domain: process.env.COOKIE_DOMAIN,
+      secure: process.env.NODE_ENV === 'PROD',
+      sameSite:
+        process.env.NODE_ENV === 'PROD'
+          ? ('strict' as const)
+          : ('lax' as const),
+      httpOnly: true,
+      path: '/',
+      maxAge: Number(process.env.JWT_EXPIRATION_TIME) * 1000, // 1 year in milliseconds
+    };
+
+    // Set the cookie if response object is provided
+    if (response) {
+      response.cookie('fitlit_token', token, cookieOptions);
+    }
 
     return {
       user: {
@@ -324,22 +343,14 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string, @Res() response: Response) {
     const user = await this.validateUser(email, password);
 
     if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('Konto jest nieaktywne');
     }
 
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      companyId: user.companyId,
-    };
-
-    console.log('Login - Token payload:', payload); // Add debug log
-    const token = this.jwtService.sign(payload);
+    const result = await this.generateToken(user, response);
 
     // Return user data without sensitive information
     const userData = {
@@ -361,7 +372,7 @@ export class AuthService {
 
     return {
       user: userData,
-      token,
+      token: result.token,
     };
   }
 }

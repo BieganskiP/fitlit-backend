@@ -9,6 +9,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CreateSuperAdminDto } from '../dto/user/create-superadmin.dto';
 import { Response as ExpressResponse } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -48,30 +50,8 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(
-    @Body() { email, password }: { email: string; password: string },
-    @Res({ passthrough: true }) response: ExpressResponse,
-  ) {
-    const { user, token } = await this.authService.login(email, password);
-
-    // Clear any existing tokens
-    response.clearCookie('fitlit_token');
-
-    // Set cookie options based on environment
-    const isDevelopment = this.configService.get('NODE_ENV') === 'DEV';
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: !isDevelopment, // false in development, true in production
-      sameSite: isDevelopment ? 'lax' : 'none',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/',
-    } as const;
-
-    // Set the cookie
-    response.cookie('fitlit_token', token, cookieOptions);
-
-    return { user };
+  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
+    return this.authService.login(loginDto.email, loginDto.password, response);
   }
 
   @Post('logout')
