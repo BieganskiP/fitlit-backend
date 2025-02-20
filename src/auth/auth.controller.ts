@@ -65,8 +65,7 @@ export class AuthController {
       sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
       path: '/',
       expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 365 days expiration
-      domain:
-        process.env.NODE_ENV === 'PROD' ? process.env.COOKIE_DOMAIN : undefined, // Don't set domain for localhost
+      domain: process.env.COOKIE_DOMAIN || undefined, // Remove the conditional and just use the domain directly
     } as any;
 
     return this.authService.login(
@@ -84,8 +83,7 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'PROD',
       sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
       path: '/',
-      domain:
-        process.env.NODE_ENV === 'PROD' ? process.env.COOKIE_DOMAIN : undefined, // Don't set domain for localhost
+      domain: process.env.COOKIE_DOMAIN || undefined, // Remove the conditional and just use the domain directly
     } as any;
 
     response.clearCookie('fitlit_token', cookieOptions);
