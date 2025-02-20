@@ -8,28 +8,29 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
+    console.log('RolesGuard - Starting role check');
+    const requiredRoles = this.reflector.get<UserRole[]>(
+      'roles',
       context.getHandler(),
-      context.getClass(),
-    ]);
+    );
+    console.log('RolesGuard - Required roles:', requiredRoles);
 
     if (!requiredRoles) {
+      console.log('RolesGuard - No roles required');
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
-    // user.role comes from the JWT token
-    const roleHierarchy = {
-      [UserRole.SUPERADMIN]: 5,
-      [UserRole.OWNER]: 4,
-      [UserRole.ADMIN]: 3,
-      [UserRole.LEADER]: 2,
-      [UserRole.USER]: 1,
-    };
+    const request = context.switchToHttp().getRequest();
+    console.log('RolesGuard - Request user:', request.user);
 
-    const userRoleLevel = roleHierarchy[user.role];
-    const requiredRoleLevel = Math.max(...requiredRoles.map(role => roleHierarchy[role]));
+    if (!request.user) {
+      console.log('RolesGuard - No user in request');
+      return false;
+    }
 
-    return userRoleLevel >= requiredRoleLevel;
+    const hasRole = requiredRoles.some((role) => request.user.role === role);
+    console.log('RolesGuard - Has required role:', hasRole);
+    
+    return hasRole;
   }
 } 

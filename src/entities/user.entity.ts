@@ -8,10 +8,12 @@ import {
   JoinColumn,
   ManyToMany,
   JoinTable,
+  OneToMany,
 } from 'typeorm';
 import { UserRole } from '../enums/user-role.enum';
 import { UserStatus } from '../enums/user-status.enum';
 import { Company } from './company.entity';
+import { Route } from './route.entity';
 
 @Entity('users')
 export class User {
@@ -85,6 +87,9 @@ export class User {
 
   @Column({ default: false })
   isProfileComplete: boolean;
+
+  @OneToMany(() => Route, (route) => route.user)
+  routes: Route[];
 
   @CreateDateColumn()
   createdAt: Date;

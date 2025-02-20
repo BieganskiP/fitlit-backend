@@ -11,6 +11,10 @@ import {
 } from 'typeorm';
 import { CompanyPlan } from '../enums/company-plan.enum';
 import { User } from './user.entity';
+import { AddressList } from './address-list.entity';
+import { AddressListInfo } from './address-list-info.entity';
+import { Complaint } from './complaint.entity';
+import { Route } from './route.entity';
 
 @Entity('companies')
 export class Company {
@@ -69,4 +73,16 @@ export class Company {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => AddressList, addressList => addressList.company)
+  addressLists: AddressList[];
+
+  @OneToMany(() => AddressListInfo, addressListInfo => addressListInfo.company)
+  addressListInfos: AddressListInfo[];
+
+  @OneToMany(() => Complaint, complaint => complaint.company)
+  complaints: Complaint[];
+
+  @OneToMany(() => Route, route => route.company)
+  routes: Route[];
 }

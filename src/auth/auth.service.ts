@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { UserStatus } from 'src/enums/user-status.enum';
 import { CreateSuperAdminDto } from '../dto/user/create-superadmin.dto';
 import { ConfigService } from '@nestjs/config';
+import { CompanyService } from '../company/company.service';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
+    private readonly companyService: CompanyService,
   ) {}
 
   async createNewClientInvitation(createInvitationDto: CreateInvitationDto) {
@@ -65,6 +67,16 @@ export class AuthService {
   ) {
     const { email } = createInvitationDto;
 
+    // First get the current user with company relation
+    const userWithCompany = await this.userRepository.findOne({
+      where: { id: currentUser.id },
+      relations: ['company'],
+    });
+
+    if (!userWithCompany || !userWithCompany.company) {
+      throw new BadRequestException('Nie znaleziono firmy');
+    }
+
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
       where: { email },
@@ -100,8 +112,8 @@ export class AuthService {
     await this.mailService.sendCompanyMemberInvitation(
       email,
       token,
-      currentUser.company.name,
-      `${currentUser.firstName} ${currentUser.lastName}`,
+      userWithCompany.company.name,
+      `${userWithCompany.firstName} ${userWithCompany.lastName}`,
     );
 
     return { message: 'Zaproszenie zostało wysłane pomyślnie' };
@@ -112,23 +124,33 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { invitationToken: token },
+      relations: ['company'],
     });
 
-    const now = new Date();
-    if (!user || !user.invitationExpires || user.invitationExpires < now) {
-      throw new BadRequestException(
-        'Nieprawidłowy lub wygasły token zaproszenia',
-      );
+    if (!user) {
+      throw new BadRequestException('Nieprawidłowy token');
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Check if invitationExpires exists and is not expired
+    if (!user.invitationExpires || user.invitationExpires < new Date()) {
+      throw new BadRequestException('Token wygasł');
+    }
 
-    // Update user
+    const hashedPassword = await bcrypt.hash(password, 10);
     user.password = hashedPassword;
     user.invitationToken = null;
     user.invitationExpires = null;
-    user.isProfileComplete = false; // User still needs to complete their profile
+    user.status = UserStatus.ACTIVE;
+
+    // If this is an owner registration (no company assigned yet)
+    if (user.role === UserRole.OWNER && !user.companyId) {
+      // Create a new company for the owner
+      const company = await this.companyService.create(
+        { name: `${user.firstName}'s Company` }, // Default name, they can change it later
+        user,
+      );
+      user.companyId = company.id;
+    }
 
     await this.userRepository.save(user);
 
@@ -304,6 +326,42 @@ export class AuthService {
 
   async login(email: string, password: string) {
     const user = await this.validateUser(email, password);
-    return this.generateToken(user);
+
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('Konto jest nieaktywne');
+    }
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      companyId: user.companyId,
+    };
+
+    console.log('Login - Token payload:', payload); // Add debug log
+    const token = this.jwtService.sign(payload);
+
+    // Return user data without sensitive information
+    const userData = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      status: user.status,
+      isProfileComplete: user.isProfileComplete,
+      company: user.company
+        ? {
+            id: user.company.id,
+            name: user.company.name,
+            plan: user.company.plan,
+          }
+        : null,
+    };
+
+    return {
+      user: userData,
+      token,
+    };
   }
 }

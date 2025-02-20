@@ -7,13 +7,15 @@ import { Roles } from './decorators/roles.decorator';
 import { UserRole } from '../enums/user-role.enum';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CreateSuperAdminDto } from '../dto/user/create-superadmin.dto';
-import { Response } from 'express';
-import { FeatureGuard } from 'src/guards/feature.guard';
-import { UserLimitGuard } from 'src/guards/user-limit.guard';
+import { Response as ExpressResponse } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('invite-client')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,12 +28,12 @@ export class AuthController {
 
   @Post('invite-member')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseGuards(FeatureGuard, UserLimitGuard)
   @Roles(UserRole.OWNER, UserRole.ADMIN)
   async createCompanyMemberInvitation(
     @Body() createInvitationDto: CreateInvitationDto,
     @Req() req,
   ) {
+    console.log('Invite member - Request user:', req.user);
     return this.authService.createCompanyMemberInvitation(
       createInvitationDto,
       req.user,
@@ -48,31 +50,32 @@ export class AuthController {
   @Post('login')
   async login(
     @Body() { email, password }: { email: string; password: string },
-    @Res({ passthrough: true }) response: Response,
+    @Res({ passthrough: true }) response: ExpressResponse,
   ) {
     const { user, token } = await this.authService.login(email, password);
 
     // Clear any existing tokens
-    response.clearCookie('jwt');
-    response.clearCookie('token');
+    response.clearCookie('fitlit_token');
 
-    // Cookie options for production environment
+    // Set cookie options based on environment
+    const isDevelopment = this.configService.get('NODE_ENV') === 'DEV';
+
     const cookieOptions = {
       httpOnly: true,
-      secure: false, // Set to false for testing with Postman
-      sameSite: 'lax', // Changed from 'none' for testing
-      maxAge: 24 * 60 * 60 * 1000,
+      secure: !isDevelopment, // false in development, true in production
+      sameSite: isDevelopment ? 'lax' : 'none',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
       path: '/',
-    } as any;
+    } as const;
 
-    // Set new token with updated settings
+    // Set the cookie
     response.cookie('fitlit_token', token, cookieOptions);
 
     return { user };
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) response: Response) {
+  async logout(@Res({ passthrough: true }) response: ExpressResponse) {
     // Use the same cookie options for consistency
     const cookieOptions = {
       httpOnly: true,
@@ -90,8 +93,6 @@ export class AuthController {
 
     // Clear token with matching settings
     response.clearCookie('fitlit_token', cookieOptions);
-    response.clearCookie('jwt');
-    response.clearCookie('token');
 
     return { message: 'Wylogowano pomyślnie' };
   }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
@@ -9,36 +9,34 @@ import { planLimits } from '../config/plan-limits.config';
 export class UserLimitService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private userRepository: Repository<User>,
     @InjectRepository(Company)
-    private readonly companyRepository: Repository<Company>,
+    private companyRepository: Repository<Company>,
   ) {}
 
-  async checkUserLimit(userId: string, companyId: string): Promise<{ allowed: boolean; message?: string }> {
+  async canAddUser(companyId: string): Promise<boolean> {
     const company = await this.companyRepository.findOne({
       where: { id: companyId },
     });
 
     if (!company) {
-      return { 
-        allowed: false, 
-        message: 'Firma nie została znaleziona'
-      };
+      throw new BadRequestException('Company not found');
     }
 
+    // Get current number of users in company
     const currentUserCount = await this.userRepository.count({
-      where: { companyId: company.id },
+      where: { companyId },
     });
 
-    const planLimit = planLimits[company.plan].maxUsers;
+    // Get plan limits
+    const limit = planLimits[company.plan].maxUsers;
 
-    if (currentUserCount >= planLimit) {
-      return {
-        allowed: false,
-        message: `Osiągnięto limit użytkowników dla planu ${company.plan}. Limit: ${planLimit}. Rozważ aktualizację planu.`,
-      };
+    if (currentUserCount >= limit) {
+      throw new BadRequestException(
+        'Osiągnięto limit użytkowników dla tego planu. Rozważ aktualizację planu.',
+      );
     }
 
-    return { allowed: true };
+    return true;
   }
 } 

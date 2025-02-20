@@ -73,7 +73,7 @@ export class MailService {
   async sendNewClientInvitation(email: string, token: string) {
     const invitationLink = `${this.configService.get(
       'FRONTEND_URL',
-    )}/complete-registration?token=${token}`;
+    )}/signup?token=${token}&type="owner"`;
 
     await this.transporter.sendMail({
       from: this.configService.get('SMTP_FROM'),
@@ -116,7 +116,7 @@ export class MailService {
   ) {
     const invitationLink = `${this.configService.get(
       'FRONTEND_URL',
-    )}/complete-registration?token=${token}`;
+    )}/signup?token=${token}&type="member"`;
 
     await this.transporter.sendMail({
       from: this.configService.get('SMTP_FROM'),

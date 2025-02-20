@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, ILike } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { FilterUsersDto } from '../dto/user/filter-users.dto';
 import { UserRole } from '../enums/user-role.enum';
@@ -16,7 +20,8 @@ export class UsersService {
     const { search, role, page = '1', limit = '10' } = filterDto;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const queryBuilder = this.userRepository.createQueryBuilder('user')
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
       .select([
         'user.id',
         'user.email',
@@ -42,8 +47,12 @@ export class UsersService {
     if (currentUser.role !== UserRole.SUPERADMIN) {
       // Non-superadmins can only see users from their company and never see superadmins
       queryBuilder
-        .where('user.companyId = :companyId', { companyId: currentUser.companyId })
-        .andWhere('user.role != :superadminRole', { superadminRole: UserRole.SUPERADMIN });
+        .where('user.companyId = :companyId', {
+          companyId: currentUser.companyId,
+        })
+        .andWhere('user.role != :superadminRole', {
+          superadminRole: UserRole.SUPERADMIN,
+        });
     }
 
     // Search condition
@@ -80,7 +89,7 @@ export class UsersService {
   }
 
   async findOne(id: string, currentUser: User) {
-    const user = await this.userRepository.findOne({ 
+    const user = await this.userRepository.findOne({
       where: { id },
       relations: ['company'],
     });
@@ -90,14 +99,18 @@ export class UsersService {
     }
 
     // Check if user has access to view this user
-    if (currentUser.role !== UserRole.SUPERADMIN && 
-        user.companyId !== currentUser.companyId) {
+    if (
+      currentUser.role !== UserRole.SUPERADMIN &&
+      user.companyId !== currentUser.companyId
+    ) {
       throw new NotFoundException('Użytkownik nie został znaleziony');
     }
 
     // Don't show superadmins to non-superadmins
-    if (user.role === UserRole.SUPERADMIN && 
-        currentUser.role !== UserRole.SUPERADMIN) {
+    if (
+      user.role === UserRole.SUPERADMIN &&
+      currentUser.role !== UserRole.SUPERADMIN
+    ) {
       throw new NotFoundException('Użytkownik nie został znaleziony');
     }
 
@@ -106,7 +119,7 @@ export class UsersService {
 
   async changeRole(userId: string, newRole: UserRole, currentUser: User) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
-    
+
     if (!user) {
       throw new NotFoundException('Użytkownik nie został znaleziony');
     }
@@ -117,18 +130,24 @@ export class UsersService {
     }
 
     // Check company access
-    if (currentUser.role !== UserRole.SUPERADMIN && 
-        user.companyId !== currentUser.companyId) {
-      throw new BadRequestException('Nie masz uprawnień do zarządzania tym użytkownikiem');
+    if (
+      currentUser.role !== UserRole.SUPERADMIN &&
+      user.companyId !== currentUser.companyId
+    ) {
+      throw new BadRequestException(
+        'Nie masz uprawnień do zarządzania tym użytkownikiem',
+      );
     }
 
     // Owner-specific restrictions
     if (currentUser.role === UserRole.OWNER) {
       // Can't create or modify owners
       if (newRole === UserRole.OWNER || user.role === UserRole.OWNER) {
-        throw new BadRequestException('Nie możesz tworzyć ani modyfikować właścicieli');
+        throw new BadRequestException(
+          'Nie możesz tworzyć ani modyfikować właścicieli',
+        );
       }
-      
+
       // Can't modify superadmins
       if (user.role === UserRole.SUPERADMIN) {
         throw new BadRequestException('Nie możesz modyfikować superadminów');
@@ -141,15 +160,19 @@ export class UsersService {
 
   async updateWage(id: string, wage: number, currentUser: User) {
     const user = await this.userRepository.findOne({ where: { id } });
-    
+
     if (!user) {
       throw new NotFoundException('Użytkownik nie został znaleziony');
     }
 
     // Check company access
-    if (currentUser.role !== UserRole.SUPERADMIN && 
-        user.companyId !== currentUser.companyId) {
-      throw new BadRequestException('Nie masz uprawnień do zarządzania tym użytkownikiem');
+    if (
+      currentUser.role !== UserRole.SUPERADMIN &&
+      user.companyId !== currentUser.companyId
+    ) {
+      throw new BadRequestException(
+        'Nie masz uprawnień do zarządzania tym użytkownikiem',
+      );
     }
 
     // Only allow positive wages
@@ -160,4 +183,42 @@ export class UsersService {
     user.wage = wage;
     return this.userRepository.save(user);
   }
-} 
+
+  async getCurrentUser(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['company', 'routes', 'superadminCompanies'],
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        status: true,
+        wage: true,
+        isProfileComplete: true,
+        company: {
+          id: true,
+          name: true,
+          plan: true,
+        },
+        routes: {
+          id: true,
+          name: true,
+          description: true,
+          active: true,
+        },
+        superadminCompanies: {
+          id: true,
+          name: true,
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+}

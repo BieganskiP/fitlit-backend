@@ -9,6 +9,7 @@ import { MailModule } from '../mail/mail.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { GuardsModule } from '../guards/guards.module';
+import { CompanyModule } from '../company/company.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { GuardsModule } from '../guards/guards.module';
     }),
     MailModule,
     GuardsModule,
+    CompanyModule,
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
