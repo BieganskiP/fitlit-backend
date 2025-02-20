@@ -209,7 +209,10 @@ export class AuthService {
         'status',
         'companyId',
         'isProfileComplete',
-      ], // Add password to selected fields
+        'firstName',
+        'lastName',
+      ],
+      relations: ['company'],
     });
 
     if (!user) {
@@ -220,6 +223,17 @@ export class AuthService {
       throw new BadRequestException(
         'Konto nie zostało jeszcze aktywowane. Sprawdź swoją skrzynkę email',
       );
+    }
+
+    // Add debug logging
+    console.log('Validating user:', {
+      hasPassword: !!user.password,
+      providedPassword: !!password,
+    });
+
+    // Make sure both password and hash exist before comparing
+    if (!password || !user.password) {
+      throw new BadRequestException('Nieprawidłowe dane logowania');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
