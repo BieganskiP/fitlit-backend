@@ -59,21 +59,15 @@ export class AuthController {
       hasPassword: !!loginDto.password,
     });
 
-    // Add expires option to make the cookie persistent
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'PROD',
       sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
       path: '/',
       expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 365 days expiration
+      domain:
+        process.env.NODE_ENV === 'PROD' ? process.env.COOKIE_DOMAIN : undefined, // Don't set domain for localhost
     } as any;
-
-    if (process.env.NODE_ENV === 'PROD' && process.env.COOKIE_DOMAIN) {
-      const domain = process.env.COOKIE_DOMAIN.trim().split('#')[0];
-      if (domain) {
-        cookieOptions.domain = domain;
-      }
-    }
 
     return this.authService.login(
       loginDto.email,
@@ -85,24 +79,16 @@ export class AuthController {
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) response: ExpressResponse) {
-    // Use the same cookie options for consistency
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'PROD',
       sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
       path: '/',
+      domain:
+        process.env.NODE_ENV === 'PROD' ? process.env.COOKIE_DOMAIN : undefined, // Don't set domain for localhost
     } as any;
 
-    if (process.env.NODE_ENV === 'PROD' && process.env.COOKIE_DOMAIN) {
-      const domain = process.env.COOKIE_DOMAIN.trim().split('#')[0];
-      if (domain) {
-        cookieOptions.domain = domain;
-      }
-    }
-
-    // Clear token with matching settings
     response.clearCookie('fitlit_token', cookieOptions);
-
     return { message: 'Wylogowano pomyślnie' };
   }
 
