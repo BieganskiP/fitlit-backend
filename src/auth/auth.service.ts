@@ -358,6 +358,12 @@ export class AuthService {
   }
 
   async login(email: string, password: string, @Res() response: Response) {
+    console.log('Login attempt:', { email, hasPassword: !!password }); // Debug log
+
+    if (!email || !password) {
+      throw new BadRequestException('Email and password are required');
+    }
+
     const user = await this.validateUser(email, password);
 
     if (user.status !== UserStatus.ACTIVE) {
