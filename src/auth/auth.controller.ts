@@ -50,41 +50,17 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(
-    @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
+  async login(@Body() loginDto: LoginDto) {
     console.log('Login request received:', {
       email: loginDto.email,
       hasPassword: !!loginDto.password,
     });
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'PROD',
-      sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
-      path: '/',
-      expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 365 days expiration
-    } as any;
-
-    return this.authService.login(
-      loginDto.email,
-      loginDto.password,
-      response,
-      cookieOptions,
-    );
+    return this.authService.login(loginDto.email, loginDto.password);
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) response: ExpressResponse) {
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'PROD',
-      sameSite: process.env.NODE_ENV === 'PROD' ? 'none' : 'lax',
-      path: '/',
-    } as any;
-
-    response.clearCookie('fitlit_token', cookieOptions);
+  async logout() {
     return { message: 'Wylogowano pomyślnie' };
   }
 

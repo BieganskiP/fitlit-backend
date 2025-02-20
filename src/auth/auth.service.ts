@@ -159,7 +159,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async generateToken(user: User, @Res() response?: Response) {
+  async generateToken(user: User) {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -168,22 +168,6 @@ export class AuthService {
     };
 
     const token = this.jwtService.sign(payload);
-
-    const cookieOptions = {
-      secure: process.env.NODE_ENV === 'PROD',
-      sameSite:
-        process.env.NODE_ENV === 'PROD'
-          ? ('strict' as const)
-          : ('lax' as const),
-      httpOnly: true,
-      path: '/',
-      maxAge: Number(process.env.JWT_EXPIRATION_TIME) * 1000, // 1 year in milliseconds
-    };
-
-    // Set the cookie if response object is provided
-    if (response) {
-      response.cookie('fitlit_token', token, cookieOptions);
-    }
 
     return {
       user: {
@@ -356,13 +340,8 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async login(
-    email: string,
-    password: string,
-    response: Response,
-    cookieOptions: any,
-  ) {
-    console.log('Login attempt:', { email, hasPassword: !!password }); // Debug log
+  async login(email: string, password: string) {
+    console.log('Login attempt:', { email, hasPassword: !!password });
 
     if (!email || !password) {
       throw new BadRequestException('Email and password are required');
@@ -373,8 +352,6 @@ export class AuthService {
     if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('Konto jest nieaktywne');
     }
-
-    const result = await this.generateToken(user, response);
 
     // Return user data without sensitive information
     const userData = {
@@ -394,12 +371,16 @@ export class AuthService {
         : null,
     };
 
-    // When setting the cookie, use the provided options
-    response.cookie('fitlit_token', result.token, cookieOptions);
+    const token = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      companyId: user.companyId,
+    });
 
     return {
       user: userData,
-      token: result.token,
+      token,
     };
   }
 }
