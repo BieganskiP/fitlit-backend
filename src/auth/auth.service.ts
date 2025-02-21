@@ -208,12 +208,6 @@ export class AuthService {
       );
     }
 
-    // Add debug logging
-    console.log('Validating user:', {
-      hasPassword: !!user.password,
-      providedPassword: !!password,
-    });
-
     // Make sure both password and hash exist before comparing
     if (!password || !user.password) {
       throw new BadRequestException('Nieprawidłowe dane logowania');
@@ -341,8 +335,6 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    console.log('Login attempt:', { email, hasPassword: !!password });
-
     if (!email || !password) {
       throw new BadRequestException('Email and password are required');
     }
@@ -382,5 +374,48 @@ export class AuthService {
       user: userData,
       token,
     };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    // Find user with password field
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'email', 'password'], // We need to explicitly select password
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // Check if new password is different from current
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    user.password = hashedPassword;
+    await this.userRepository.save(user);
+
+    return { message: 'Password changed successfully' };
   }
 }

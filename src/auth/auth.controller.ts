@@ -11,6 +11,7 @@ import { Response as ExpressResponse } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -35,7 +36,7 @@ export class AuthController {
     @Body() createInvitationDto: CreateInvitationDto,
     @Req() req,
   ) {
-    console.log('Invite member - Request user:', req.user);
+
     return this.authService.createCompanyMemberInvitation(
       createInvitationDto,
       req.user,
@@ -51,11 +52,6 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    console.log('Login request received:', {
-      email: loginDto.email,
-      hasPassword: !!loginDto.password,
-    });
-
     return this.authService.login(loginDto.email, loginDto.password);
   }
 
@@ -77,5 +73,18 @@ export class AuthController {
   @Post('setup/superadmin')
   async createSuperAdmin(@Body() createSuperAdminDto: CreateSuperAdminDto) {
     return this.authService.createSuperAdmin(createSuperAdminDto);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Req() req,
+  ) {
+    return this.authService.changePassword(
+      req.user.id,
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
+    );
   }
 }
