@@ -19,6 +19,7 @@ import { FilterUsersDto } from '../dto/user/filter-users.dto';
 import { FeatureGuard } from 'src/guards/feature.guard';
 import { RequireFeature } from '../decorators/require-feature.decorator';
 import { AuthenticatedRequest } from '../types/express';
+import { UserResponseDto } from '../dto/user/user-response.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,7 +27,9 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
-  async getCurrentUser(@Req() req: AuthenticatedRequest) {
+  async getCurrentUser(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<UserResponseDto> {
     return this.usersService.getCurrentUser(req.user.id);
   }
 

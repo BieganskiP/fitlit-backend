@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { FilterUsersDto } from '../dto/user/filter-users.dto';
 import { UserRole } from '../enums/user-role.enum';
+import { UserResponseDto } from '../dto/user/user-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -184,41 +185,48 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async getCurrentUser(userId: string) {
+  async getCurrentUser(userId: string): Promise<UserResponseDto> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['company', 'routes', 'superadminCompanies'],
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        status: true,
-        wage: true,
-        isProfileComplete: true,
-        company: {
-          id: true,
-          name: true,
-          plan: true,
-        },
-        routes: {
-          id: true,
-          name: true,
-          description: true,
-          active: true,
-        },
-        superadminCompanies: {
-          id: true,
-          name: true,
-        },
-      },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return user;
+    // Map the user entity to the DTO
+    const userResponse: UserResponseDto = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      status: user.status,
+      wage: user.wage,
+      isProfileComplete: user.isProfileComplete,
+      company: user.company
+        ? {
+            id: user.company.id,
+            name: user.company.name,
+            plan: user.company.plan,
+          }
+        : undefined,
+      routes: user.routes?.map((route) => ({
+        id: route.id,
+        name: route.name,
+        description: route.description,
+        active: route.active,
+      })),
+      superadminCompanies:
+        user.role === UserRole.SUPERADMIN
+          ? user.superadminCompanies?.map((company) => ({
+              id: company.id,
+              name: company.name,
+            }))
+          : undefined,
+    };
+
+    return userResponse;
   }
 }

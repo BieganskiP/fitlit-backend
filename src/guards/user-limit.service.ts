@@ -20,7 +20,7 @@ export class UserLimitService {
     });
 
     if (!company) {
-      throw new BadRequestException('Company not found');
+      throw new BadRequestException('Nie znaleziono firmy');
     }
 
     // Get current number of users in company
@@ -39,4 +39,4 @@ export class UserLimitService {
 
     return true;
   }
-} 
+}

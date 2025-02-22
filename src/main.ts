@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { FeatureRestrictionFilter } from './filters/feature-restriction.filter';
+import { useContainer } from 'class-validator';
+import { Reflector } from '@nestjs/core';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,9 +14,8 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  // Set CORS with credentials
   app.enableCors({
-    origin: true, // Allow all origins for testing
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -28,6 +29,8 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new FeatureRestrictionFilter());
+
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   await app.listen(port);
   console.log(`Application is running on: ${await app.getUrl()}`);
