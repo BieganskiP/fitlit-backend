@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Req, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+  Patch,
+} from '@nestjs/common';
 import { RoutesService } from './routes.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -13,7 +23,7 @@ export class RoutesController {
   constructor(private readonly routesService: RoutesService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @Roles(UserRole.ADMIN, UserRole.OWNER, UserRole.SUPERADMIN)
   async findAll(
     @Req() req: AuthenticatedRequest,
     @Query('activeOnly') activeOnly?: string,
@@ -35,10 +45,7 @@ export class RoutesController {
 
   @Patch(':id/deactivate')
   @Roles(UserRole.ADMIN, UserRole.OWNER)
-  async deactivate(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async deactivate(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.routesService.deactivate(id, req.user.companyId);
   }
 
@@ -51,4 +58,4 @@ export class RoutesController {
   ) {
     return this.routesService.assignToUser(id, userId, req.user.companyId);
   }
-} 
+}

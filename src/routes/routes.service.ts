@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Route } from '../entities/route.entity';
@@ -12,7 +16,8 @@ export class RoutesService {
   ) {}
 
   async findAll(companyId: string, activeOnly: boolean = false) {
-    const query = this.routeRepository.createQueryBuilder('route')
+    const query = this.routeRepository
+      .createQueryBuilder('route')
       .where('route.companyId = :companyId', { companyId });
 
     if (activeOnly) {
@@ -64,4 +69,4 @@ export class RoutesService {
     route.userId = userId;
     return this.routeRepository.save(route);
   }
-} 
+}

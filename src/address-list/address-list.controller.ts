@@ -38,7 +38,7 @@ export class AddressListController {
   }
 
   @Get('my-deliveries')
-  @Roles(UserRole.USER)
+  @Roles(UserRole.USER, UserRole.LEADER, UserRole.ADMIN, UserRole.OWNER)
   async findMyDeliveries(
     @Req() req: AuthenticatedRequest,
     @Query('date') dateString?: string,
